@@ -67,24 +67,13 @@ static inline void Swizzle(Class c, SEL orig, SEL new)
     [[UIApplication sharedApplication] writeScreenshotForLine:[exception.userInfo[@"LineNumberKey"] unsignedIntegerValue] inFile:exception.userInfo[@"FilenameKey"] description:nil error:NULL];
 
     // Per #1084, something broke in this code starting with Xcode 10.
-    // For now, this will be disabled and can be fixed later by anyone
-    // that relies on this functionality.
-#if defined(__IPHONE_11_0) && !defined(__IPHONE_12_0)
-    if (@available(iOS 11.0, *)) {
-        //semaphore will make sure the screenshot will be captured. otherwise it will crash on getting screenshot!
-        dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
-        
-        [XCTContext runActivityNamed:(@"screenshot") block:^(id<XCTActivity>  _Nonnull activity) {
-            XCUIScreenshot *screenShot = [[XCUIScreen mainScreen] screenshot];
-            XCTAttachment *attachment = [XCTAttachment attachmentWithScreenshot:screenShot];
-            [activity addAttachment:(attachment)];
-            dispatch_semaphore_signal(semaphore);
-        }];
-        
-        dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
+    // The issue was fixed in Xcode 10.1.
+    if (@available(iOS 11.1, *)) {
+        XCUIScreenshot *screenShot = [[XCUIScreen mainScreen] screenshot];
+        XCTAttachment *attachment = [XCTAttachment attachmentWithScreenshot:screenShot];
+        attachment.lifetime = XCTAttachmentLifetimeDeleteOnSuccess;
+        [self addAttachment:attachment];
     }
-#endif
-    
 }
 
 - (void)printViewHierarchyIfOptedIn;
